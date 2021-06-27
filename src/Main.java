@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.Scanner;
 import java.io.IOException;
 
@@ -21,50 +22,81 @@ public class Main
         System.out.print("\nPilih dataset  : ");
         Scanner input = new Scanner(System.in);
 
-        // long startTime = System.nanoTime();
         int dataset = input.nextInt();
-        long startTime = System.nanoTime();
 
         String filePilihanInput = fileName[dataset-1][0];
         System.out.println("\n================================================\n");
 
         CourseData course = new CourseData(filePilihanInput);
 
-        int jumlahCourse = course.getNumberOfCourses();
-        conflictMatrix = new int[jumlahCourse][jumlahCourse];
-
-        //mendapatkan conflict_matrix:
+        //Mendapatkan conflict_matrix:
         conflictMatrix = course.getConflictMatrix();
+        course.showConflictMatrix(50);
         System.out.println(" ");
 
-        //mendapatkan weightedClashMatrix:
-        weightedClashMatrix = course.getWeightedClashMatrix();
-        System.out.println(" ");
-
-        //mendapatkan hasil sorting largest degree:
-        sortedCourse = course.sortByDegree(conflictMatrix, jumlahCourse);
+        //Mendapatkan hasil sorting largest degree:
+        sortedCourse = course.sortByDegree();
         System.out.println("\n================================================\n");
 
-//        mendapatkan hasil sorting largest weighted degree:
-//        sortedWeightedCourse = course.sortByWeightedDegree(weightedClashMatrix, jumlahCourse);
-//        System.out.println("\n================================================\n");
+        //Melakukan scheduling (Largest Degree)
+        ExamScheduling sch = new ExamScheduling(conflictMatrix, sortedCourse);
+        long startTimeLD = System.nanoTime();
+        timeslot = sch.scheduleByDegree();
+        long endTimeLD = System.nanoTime();
 
-        //melakukan scheduling (Largest Degree)
-        ExamScheduling sch = new ExamScheduling(filePilihanInput, conflictMatrix, jumlahCourse);
-        timeslot = sch.scheduleByDegree(sortedCourse,jumlahCourse);
-
-//        melakukan scheduling (Largest Weighted Degree)
-//        ExamScheduling sch = new ExamScheduling(filePilihanInput, conflictMatrix, jumlahCourse);
-//        timeslot = sch.scheduleByWeightedDegree(sortedWeightedCourse,jumlahCourse);
-
-        //mengecek apakah ditemukan konflik pada schedule
+        //Mengecek apakah ditemukan konflik pada schedule
         System.out.println(" ");
         System.out.println("Apakah ada Konflik? : "+ sch.isConflicted());
+        System.out.print("");
+
+        int minimumTimeslot = sch.getTimeslot();
+        System.out.println("Minimal Timeslots: "+ minimumTimeslot);
         System.out.println(Penalty.countPenalty(course.getStudentData(), timeslot));
-        sch.getTimeslot();
-        long endTime = System.nanoTime();
-        long timeElapsed = endTime - startTime;
-        System.out.println("Execution time in milliseconds : " +
+        double initialPenalty = Penalty.countPenalty(course.getStudentData(), timeslot);
+
+        long timeElapsed = endTimeLD - startTimeLD;
+        System.out.println("Largest Degree Initial Solution Execution time in milliseconds : " +
                 timeElapsed / 1000000);
+
+//-------------------------------------Hill Climbiing--------------------------------//
+
+    //    HillClimbing hcl = new HillClimbing(conflictMatrix, timeslot, 1000000, minimumTimeslot, course.getStudentData());
+    //    long startTimeHC = System.nanoTime();
+    //    hcl.optimizeTimeslot();
+    //    long endTimeHC = System.nanoTime();
+    //    double penaltyHC = hcl.finalPenalty;
+
+    //     double delta = ((initialPenalty-penaltyHC)/initialPenalty)*100;
+
+    //     System.out.println();
+    //     System.out.println("Initial Penalty = " + initialPenalty);
+    //     System.out.println("Final Penalty = " + penaltyHC);
+    //     System.out.println("Delta = " + delta + "%");
+    //    long timeElapsedHC = endTimeHC - startTimeHC;
+    //    System.out.println("Hill Climbing execution time in seconds : " +
+    //            timeElapsedHC / 1000000000);
+
+
+
+
+//--------------------------------Random Meta Heuristic--------------------------------//
+
+       RandomMetaheuristic RMH = new RandomMetaheuristic(conflictMatrix, timeslot, 150000, minimumTimeslot, course.getStudentData());
+        long startTimeRMH = System.nanoTime();
+        RMH.optimizeTimeslot();
+        long endTimeRMH = System.nanoTime();
+        double penaltyRMH = RMH.finalPenalty;
+        long timeElapsedRMH = endTimeRMH - startTimeRMH;
+
+        double delta = ((initialPenalty-penaltyRMH)/initialPenalty)*100;
+
+        System.out.println();
+        System.out.println("Initial Penalty = " + initialPenalty);
+        System.out.println("Final Penalty = " + penaltyRMH);
+        System.out.println("Delta = " + delta + "%");
+        System.out.println("Random Meta Heuristic execution time in seconds : " +
+                timeElapsedRMH / 1000000000);
+
+
     }
 }
